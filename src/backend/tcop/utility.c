@@ -160,6 +160,8 @@ check_xact_readonly(Node *parsetree)
 		case T_CommentStmt:
 		case T_DefineStmt:
 		case T_CreateCastStmt:
+		case T_CreateClassStmt:
+		case T_CreateDeputyClassStmt:
 		case T_CreateEventTrigStmt:
 		case T_AlterEventTrigStmt:
 		case T_CreateConversionStmt:
@@ -219,6 +221,11 @@ check_xact_readonly(Node *parsetree)
 		case T_DropSubscriptionStmt:
 			PreventCommandIfReadOnly(CreateCommandTag(parsetree));
 			PreventCommandIfParallelMode(CreateCommandTag(parsetree));
+			break;
+		case T_InsertImpreciseStmt:
+			ereport(ERROR,
+					(errcode(ERRCODE_READ_ONLY_SQL_TRANSACTION),
+					 errmsg("transaction is read-only")));
 			break;
 		default:
 			/* do nothing */
@@ -984,6 +991,116 @@ ProcessUtilitySlow(ParseState *pstate,
 				commandCollected = true;
 				break;
 
+			case T_CreateClassStmt:
+				{
+					/*printf("create class stmt recieved, pass now");*/
+					List	   *stmts;
+					ListCell   *l;
+
+					/* Run parse analysis ... */
+					stmts = transformCreateClassStmt((CreateClassStmt *) parsetree,
+												queryString);
+
+					/* ... and do it */
+					foreach(l, stmts)
+					{
+						Node	   *stmt = (Node *) lfirst(l);
+
+						if (IsA(stmt, CreateStmt))
+						{
+							Datum		toast_options;
+							static char *validnsps[] = HEAP_RELOPT_NAMESPACES;
+
+							/* Create the table itself */
+							address = DefineRelation((CreateStmt *) stmt,
+													 RELKIND_CLASS,
+													 InvalidOid, NULL,
+													 queryString);
+							EventTriggerCollectSimpleCommand(address,
+															 secondaryObject,
+															 stmt);
+
+							/*
+							 * Let NewRelationCreateToastTable decide if this
+							 * one needs a secondary relation too.
+							 */
+							CommandCounterIncrement();
+
+							/*
+							 * parse and validate reloptions for the toast
+							 * table
+							 */
+							toast_options = transformRelOptions((Datum) 0,
+																((CreateStmt *) stmt)->options,
+																"toast",
+																validnsps,
+																true,
+																false);
+							(void) heap_reloptions(RELKIND_TOASTVALUE,
+												   toast_options,
+												   true);
+
+							NewRelationCreateToastTable(address.objectId,
+														toast_options);
+						}
+						else if (IsA(stmt, CreateForeignTableStmt))
+						{
+							/* Create the table itself */
+							address = DefineRelation((CreateStmt *) stmt,
+													 RELKIND_FOREIGN_TABLE,
+													 InvalidOid, NULL,
+													 queryString);
+							CreateForeignTable((CreateForeignTableStmt *) stmt,
+											   address.objectId);
+							EventTriggerCollectSimpleCommand(address,
+															 secondaryObject,
+															 stmt);
+						}
+						else
+						{
+							/*
+							 * Recurse for anything else.  Note the recursive
+							 * call will stash the objects so created into our
+							 * event trigger context.
+							 */
+							PlannedStmt *wrapper;
+
+							wrapper = makeNode(PlannedStmt);
+							wrapper->commandType = CMD_UTILITY;
+							wrapper->canSetTag = false;
+							wrapper->utilityStmt = stmt;
+							wrapper->stmt_location = pstmt->stmt_location;
+							wrapper->stmt_len = pstmt->stmt_len;
+
+							ProcessUtility(wrapper,
+										   queryString,
+										   PROCESS_UTILITY_SUBCOMMAND,
+										   params,
+										   NULL,
+										   None_Receiver,
+										   NULL);
+						}
+
+						/* Need CCI between commands */
+						if (lnext(l) != NULL)
+							CommandCounterIncrement();
+					}
+
+					/*
+					 * The multiple commands generated here are stashed
+					 * individually, so disable collection below.
+					 */
+					commandCollected = true;
+
+				}
+				break;
+			
+			case T_CreateDeputyClassStmt:
+				{
+					printf("create deputy class stmt recieved");
+				}
+				break;
+			
 			case T_CreateStmt:
 			case T_CreateForeignTableStmt:
 				{
@@ -1690,6 +1807,7 @@ ExecDropStmt(DropStmt *stmt, bool isTopLevel)
 			/* fall through */
 
 		case OBJECT_TABLE:
+		case OBJECT_CLASS:
 		case OBJECT_SEQUENCE:
 		case OBJECT_VIEW:
 		case OBJECT_MATVIEW:
@@ -2048,6 +2166,10 @@ CreateCommandTag(Node *parsetree)
 		case T_InsertStmt:
 			tag = "INSERT";
 			break;
+		
+		case T_InsertImpreciseStmt:
+			tag = "INSERT";
+			break;
 
 		case T_DeleteStmt:
 			tag = "DELETE";
@@ -2145,6 +2267,14 @@ CreateCommandTag(Node *parsetree)
 
 		case T_CreateStmt:
 			tag = "CREATE TABLE";
+			break;
+		
+		case T_CreateClassStmt:
+			tag = "CREATE CLASS";
+			break;
+
+		case T_CreateDeputyClassStmt:
+			tag = "CREATE DEPUTY CLASS";
 			break;
 
 		case T_CreateTableSpaceStmt:
@@ -2308,6 +2438,9 @@ CreateCommandTag(Node *parsetree)
 					break;
 				case OBJECT_STATISTIC_EXT:
 					tag = "DROP STATISTICS";
+					break;
+				case OBJECT_CLASS:
+					tag = "DROP CLASS";
 					break;
 				default:
 					tag = "???";

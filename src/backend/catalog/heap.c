@@ -864,6 +864,9 @@ AddNewRelationTuple(Relation pg_class_desc,
 		case RELKIND_MATVIEW:
 		case RELKIND_INDEX:
 		case RELKIND_TOASTVALUE:
+		case RELKIND_CLASS:
+		case RELKIND_DEPUTYCLASS:
+			/*lsc, add relkind cases for classes*/
 			/* The relation is real, but as yet empty */
 			new_rel_reltup->relpages = 0;
 			new_rel_reltup->reltuples = 0;

@@ -282,6 +282,17 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 		CreateMatViewStmt RefreshMatViewStmt CreateAmStmt
 		CreatePublicationStmt AlterPublicationStmt
 		CreateSubscriptionStmt AlterSubscriptionStmt DropSubscriptionStmt
+/*lsc*/
+%type <node> CreateClassStmt MethodStmt CreateDeputyClassStmt 
+/*%type <node> InsertImpreciseStmt
+%type <node>    write_expr  rawpath   pathelem
+%type <list>    userpath
+type <boolean>  opt_any*/
+%type <list> opt_attr_list opt_method_list opt_write_list proc_list write_list 
+%type <node> write_expr
+%type <boolean> opt_precise
+%type <chr>      deputy_class 
+
 
 %type <node>	select_no_parens select_with_parens select_clause
 				simple_select values_clause
@@ -365,7 +376,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 %type <list>	DefACLOptionList
 %type <ival>	import_qualification_type
 %type <importqual> import_qualification
-
+/*mods here ,lsc*/
 %type <list>	stmtblock stmtmulti
 				OptTableElementList TableElementList OptInherit definition
 				OptTypedTableElementList TypedTableElementList
@@ -381,8 +392,8 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 				name_list role_list from_clause from_list opt_array_bounds
 				qualified_name_list any_name any_name_list type_name_list
 				any_operator expr_list attrs
-				target_list opt_target_list insert_column_list set_target_list
-				set_clause_list set_clause
+				target_list opt_target_list insert_column_list /*insert_target_list  insert_target_el update_target_list update_target_el*/
+				set_target_list set_clause_list set_clause
 				def_list operator_def_list indirection opt_indirection
 				reloption_list group_clause TriggerFuncArgs select_limit
 				opt_select_limit opclass_item_list opclass_drop_list
@@ -453,7 +464,8 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 %type <list>	OptSeqOptList SeqOptList OptParenthesizedSeqOptList
 %type <defelt>	SeqOptElem
 
-%type <istmt>	insert_rest
+%type <istmt>	insert_rest 
+/*%type <istmt> add_into_rest*/
 %type <infer>	opt_conf_expr
 %type <onconflict> opt_on_conflict
 
@@ -636,7 +648,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 	IDENTITY_P IF_P ILIKE IMMEDIATE IMMUTABLE IMPLICIT_P IMPORT_P IN_P
 	INCLUDING INCREMENT INDEX INDEXES INHERIT INHERITS INITIALLY INLINE_P
 	INNER_P INOUT INPUT_P INSENSITIVE INSERT INSTEAD INT_P INTEGER
-	INTERSECT INTERVAL INTO INVOKER IS ISNULL ISOLATION
+	INTERSECT INTERVAL INTO INVOKER IS ISNULL ISOLATION IMPRECISE
 
 	JOIN
 
@@ -666,7 +678,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 	RESET RESTART RESTRICT RETURNING RETURNS REVOKE RIGHT ROLE ROLLBACK ROLLUP
 	ROW ROWS RULE
 
-	SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
+	SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SELECTDEPUTYCLASS SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHOW
 	SIMILAR SIMPLE SKIP SMALLINT SNAPSHOT SOME SQL_P STABLE STANDALONE_P
 	START STATEMENT STATISTICS STDIN STDOUT STORAGE STRICT_P STRIP_P
@@ -752,6 +764,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 %left		AT				/* sets precedence for AT TIME ZONE */
 %left		COLLATE
 %right		UMINUS
+%left		ARROW
 %left		'[' ']'
 %left		'(' ')'
 %left		TYPECAST
@@ -852,7 +865,9 @@ stmt :
 			| CreateAsStmt
 			| CreateAssertStmt
 			| CreateCastStmt
+			| CreateClassStmt
 			| CreateConversionStmt
+			| CreateDeputyClassStmt
 			| CreateDomainStmt
 			| CreateExtensionStmt
 			| CreateFdwStmt
@@ -906,6 +921,7 @@ stmt :
 			| GrantRoleStmt
 			| ImportForeignSchemaStmt
 			| IndexStmt
+			/*| InsertImpreciseStmt*/
 			| InsertStmt
 			| ListenStmt
 			| RefreshMatViewStmt
@@ -3035,6 +3051,118 @@ copy_generic_opt_arg_list_item:
 		;
 
 
+/*****************************************************************************
+ *
+ *		QUERY :
+ *				CREATE CLASS classname
+		lsc
+ *
+ *****************************************************************************/
+CreateClassStmt:  CREATE CLASS qualified_name '(' OptTableElementList ')' opt_method_list OptTableSpace 														
+		{												
+		 CreateClassStmt *n=makeNode(CreateClassStmt);												
+		 $3->istemp=false;												
+		 $3->isclass=true;					
+		 n->classname=$3;					
+		 n->classelem=$5;					
+		 n->methods= $7;					
+		 n->createstmt=NULL;					
+		 n->tablespacename=$8;					
+		 $$=(Node *)n;					
+		}					
+		;
+
+/*****************************************************************************
+ *
+ *		QUERY :
+ *				CREATE DEPUTY CLASS classname
+		lsc
+ *
+ *****************************************************************************/
+CreateDeputyClassStmt:       CREATE  opt_precise deputy_class qualified_name opt_attr_list									
+                                                        AS select_with_parens  opt_write_list  opt_method_list    OptTableSpace									
+                                          {									
+                                                CreateDeputyClassStmt *n=makeNode(CreateDeputyClassStmt);									
+                                                $4->istemp=false;									
+                                                $4->isclass=true;									
+                                                n->isPrecise=$2;									
+                                                n->dkind=$3;									
+                                                n->classname=$4;									
+                                                n->realattrs=$5;			
+                                                n->deputyRule=$7;			
+                                                n->writeExprs=$8;			
+                                                n->methods=$9;			
+                                                n->tablespacename=$10;			
+                                                n->createstmt= NULL;
+						n->deputy_desc = NULL;
+                                                $$=(Node *)n;			
+                                          }	
+					;
+
+opt_method_list:		METHOD  proc_list   {$$=$2;}					
+		                  | /*EMPTY*/               {$$=NIL;}					
+	                         ;					
+
+proc_list:		'(' MethodStmt ')'                  {$$=list_make1($2);}						
+		    | proc_list ',' '(' MethodStmt ')' 						
+		      {						
+		        $$=lappend($1,$4);						
+		      }						
+	           ;						
+MethodStmt:   func_name  func_args  RETURNS  func_return  createfunc_opt_list   opt_definition										
+	        	 {										
+		           CreateFunctionStmt *n = makeNode(CreateFunctionStmt);										
+		           n->replace = false;										
+		           n->funcname = $1;										
+		           n->parameters = $2;										
+		           n->returnType = $4;										
+		           n->options = $5;										
+		           n->withClause = $6;										
+		          $$ = (Node *)n;									
+		        }									
+		   | func_name func_args createfunc_opt_list opt_definition									
+		      {									
+		         CreateFunctionStmt *n = makeNode(CreateFunctionStmt);									
+		         n->replace =false;									
+		         n->funcname = $1;									
+		         n->parameters = $2;									
+		         n->returnType = NULL;									
+		         n->options = $3;									
+		         n->withClause = $4;									
+		        $$ = (Node *)n;									
+		     }									
+	         ;	
+opt_attr_list:		  '(' OptTableElementList ')'		{$$=$2;}	
+	                       |      /*EMPTY*/			              {$$=NIL;}	
+		                ;			
+
+
+deputy_class:		SELECTDEPUTYCLASS			{$$='s';}		
+		       /*    | UNIONDEPUTYCLASS			{$$='u';}		
+		           | JOINDEPUTYCLASS			       {$$='j';}		
+		           | GROUPDEPUTYCLASS			{$$='g';} */
+		           ;					
+
+opt_write_list:		WRITE '(' write_list ')'			{$$=$3;}		
+		           | /*EMPTY*/			{$$=NIL;}		
+		           ;	
+				
+write_list:		write_expr			{$$=list_make1($1);}		
+		          | write_list ',' write_expr			{$$=lappend($1,$3);}		
+		          ;					
+
+write_expr:		columnref '=' a_expr					
+		          {					
+		                WriteExpr *n=makeNode(WriteExpr);					
+		                n->sourceAttr=(Node *)$1;					
+		                n->expr=(Node *)$3;					
+		               $$=(Node *)n;					
+		         }					
+		         ;		
+opt_precise:		       IMPRECISE		{$$=false;}		
+		             |     /*EMPTY*/		{$$=true;}		
+		             ;	
+			
 /*****************************************************************************
  *
  *		QUERY :
@@ -6145,6 +6273,7 @@ DropStmt:	DROP drop_type_any_name IF_P EXISTS any_name_list opt_drop_behavior
 /* object types taking any_name_list */
 drop_type_any_name:
 			TABLE									{ $$ = OBJECT_TABLE; }
+			| CLASS									{ $$ = OBJECT_CLASS; }
 			| SEQUENCE								{ $$ = OBJECT_SEQUENCE; }
 			| VIEW									{ $$ = OBJECT_VIEW; }
 			| MATERIALIZED VIEW						{ $$ = OBJECT_MATVIEW; }
@@ -8073,6 +8202,7 @@ ReindexStmt:
 reindex_target_type:
 			INDEX					{ $$ = REINDEX_OBJECT_INDEX; }
 			| TABLE					{ $$ = REINDEX_OBJECT_TABLE; }
+		/*	| CLASS					{ $$ = REINDEX_OBJECT_CLASS; } */
 		;
 reindex_target_multitable:
 			SCHEMA					{ $$ = REINDEX_OBJECT_SCHEMA; }
@@ -10466,7 +10596,59 @@ insert_target:
 					$$ = $1;
 				}
 		;
+/*****************************************************************************
+ *
+ *		QUERY:
+ *				INSERT IMPRECISE STATEMENTS
+ *            Added by xp at 2006.5.18
+ *****************************************************************************/
+/*lsc
+InsertImpreciseStmt:      ADD_P opt_any INTO  qualified_name  WITH  add_into_rest   from_clause where_clause  							
+			              {								
+			                    InsertImpreciseStmt *n=makeNode(InsertImpreciseStmt);								
+			                    SelectStmt *s=makeNode(SelectStmt);								
+			                    s->fromClause=$7;								
+			                    s->whereClause=$8;								
+			                    n->addany=$2;								
+			                    n->classname=$4;								
+			                    n->selectstmt=(Node *)s;								
+			                    n->insertstmt=$6;								
+			                   $$=(Node *)n;								
+			               }								
+			         | ADD_P opt_any INTO  qualified_name from_clause where_clause								
+			         {								
+			                InsertImpreciseStmt *n=makeNode(InsertImpreciseStmt);								
+			                SelectStmt *s=makeNode(SelectStmt);								
+			                s->fromClause=$5;								
+			                s->whereClause=$6;								
+			                n->addany=$2;								
+		 	                n->classname=$4;								
+			                n->selectstmt=(Node *)s;								
+			                n->insertstmt=NULL;								
+			               $$=(Node *)n;								
+			         }								
+			        ;							
 
+opt_any:	      ANY		{$$=true;}							
+	           |  {$$=false;}							
+	           ;
+
+add_into_rest:  VALUES '(' insert_target_list ')'
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = NIL;
+					$$->targetList = $3;
+					$$->selectStmt = NULL;
+				}		
+		| '(' insert_column_list ')' VALUES '(' insert_target_list ')'
+				{
+					$$ = makeNode(InsertStmt);
+					$$->cols = $2;
+					$$->targetList = $6;
+					$$->selectStmt = NULL;
+				}	
+		;
+*/	   
 insert_rest:
 			SelectStmt
 				{
@@ -10723,7 +10905,6 @@ set_target_list:
 			set_target								{ $$ = list_make1($1); }
 			| set_target_list ',' set_target		{ $$ = lappend($1,$3); }
 		;
-
 
 /*****************************************************************************
  *
@@ -13040,7 +13221,8 @@ b_expr:		c_expr
  * inside parentheses, such as function arguments; that cannot introduce
  * ambiguity to the b_expr syntax.
  */
-c_expr:		columnref								{ $$ = $1; }
+c_expr:		columnref								{ $$ = $1; }							
+			/*| rawpath							{ $$ = $1; }*/
 			| AexprConst							{ $$ = $1; }
 			| PARAM opt_indirection
 				{
@@ -13241,12 +13423,50 @@ func_application: func_name '(' ')'
 					 * so that later processing can detect what the argument
 					 * really was.
 					 */
-					FuncCall *n = makeFuncCall($1, NIL, @1);
+					FuncCall *n = makeFuncCall($1, NIL, @1);/*note here, lsc*/
 					n->agg_star = TRUE;
 					$$ = (Node *)n;
 				}
 		;
 
+/*****************************************************************************
+ *
+ *            path expression
+ *            
+ *****************************************************************************/
+/*
+rawpath :  	'('pathelem ARROW userpath ')''.' c_expr								
+	             {								
+	                  RawPath *n=makeNode(RawPath);								
+	                  n->path=lcons($2,$4);								
+	                  n->target= $7;								
+	                  $$=(Node *)n;								
+	             }						
+	             ;						
+
+userpath:	      pathelem		{ $$=list_make1($1);}			
+		   | userpath ARROW pathelem					
+		      {					
+		         $$=lappend($1,$3);					
+		      }					
+		  ;				
+
+pathelem:    	qualified_name	'{' a_expr '}'						
+		   {							
+		        Ident *n=makeNode(Ident);							
+		        n->item=(Node *)$1;							
+		        n->pathqual= $3;							
+		        $$=(Node *)n;							
+		    }
+		| qualified_name						
+		   {							
+		        Ident *n=makeNode(Ident);							
+		        n->item=(Node *)$1;							
+		        n->pathqual= NULL;							
+		        $$=(Node *)n;							
+		    }
+		;
+*/
 
 /*
  * func_expr and its cousin func_expr_windowless are split out from c_expr just
@@ -14274,7 +14494,52 @@ target_el:	a_expr AS ColLabel
 				}
 		;
 
+/*lsc
+insert_target_list:
+			insert_target_el						{ $$ = list_make1($1); }
+			| insert_target_list ',' insert_target_el { $$ = lappend($1, $3); }
+		;
 
+insert_target_el:
+			a_expr
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = NULL;
+					$$->indirection = NIL;
+					$$->val = (Node *)$1;
+				}
+			| DEFAULT
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = NULL;
+					$$->indirection = NIL;
+					$$->val = (Node *) makeNode(SetToDefault);}
+			;
+
+				
+update_target_list:
+			update_target_el						{ $$ = list_make1($1); }
+			| update_target_list ',' update_target_el { $$ = lappend($1,$3); }
+		;
+
+update_target_el:
+			ColId opt_indirection '=' a_expr
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = $1;
+					$$->indirection = $2;
+					$$->val = (Node *) $4;
+				}
+			| ColId opt_indirection '=' DEFAULT
+				{
+					$$ = makeNode(ResTarget);
+					$$->name = $1;
+					$$->indirection = $2;
+					$$->val = (Node *) makeNode(SetToDefault);
+				}
+
+		;
+*/
 /*****************************************************************************
  *
  *	Names and constants
@@ -14709,6 +14974,7 @@ unreserved_keyword:
 			| IMMUTABLE
 			| IMPLICIT_P
 			| IMPORT_P
+			| IMPRECISE
 			| INCLUDING
 			| INCREMENT
 			| INDEX
@@ -14819,6 +15085,7 @@ unreserved_keyword:
 			| SEARCH
 			| SECOND_P
 			| SECURITY
+			| SELECTDEPUTYCLASS
 			| SEQUENCE
 			| SEQUENCES
 			| SERIALIZABLE
@@ -15126,6 +15393,7 @@ makeColumnRef(char *colname, List *indirection,
 	ColumnRef  *c = makeNode(ColumnRef);
 	int		nfields = 0;
 	ListCell *l;
+	//c->typeoid = InvalidOid;	
 
 	c->location = location;
 	foreach(l, indirection)

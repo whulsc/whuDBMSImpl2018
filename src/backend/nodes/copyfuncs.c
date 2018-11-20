@@ -3241,6 +3241,13 @@ _copyCopyStmt(const CopyStmt *from)
  *		This function copies the fields of the CreateStmt node.  It is used by
  *		copy functions for classes which inherit from CreateStmt.
  */
+/*lsc*/
+static void
+CopyCreateClassStmtFields(const CreateClassStmt *from, CreateClassStmt *newnode)
+{
+	COPY_NODE_FIELD(classname);
+}
+
 static void
 CopyCreateStmtFields(const CreateStmt *from, CreateStmt *newnode)
 {
@@ -3266,7 +3273,17 @@ _copyCreateStmt(const CreateStmt *from)
 
 	return newnode;
 }
+/*lsc, start
+lsc, end*/
+static CreateClassStmt *
+_copyCreateClassStmt(const CreateClassStmt *from)
+{
+	CreateClassStmt *newnode = makeNode(CreateClassStmt);
 
+	CopyCreateClassStmtFields(from, newnode);
+
+	return newnode;
+}
 static TableLikeClause *
 _copyTableLikeClause(const TableLikeClause *from)
 {
@@ -5095,6 +5112,10 @@ copyObjectImpl(const void *from)
 			break;
 		case T_CreateStmt:
 			retval = _copyCreateStmt(from);
+			break;
+		/*lsc*/
+		case T_CreateClassStmt:
+			retval = _copyCreateClassStmt(from);
 			break;
 		case T_TableLikeClause:
 			retval = _copyTableLikeClause(from);

@@ -87,6 +87,13 @@ typedef enum NodeTag
 	T_NestLoopParam,
 	T_PlanRowMark,
 	T_PlanInvalItem,
+	/*lsc*/
+	T_DeputyScan,
+	T_PropagationPlan,
+	T_PropRangeTblEntry,
+	T_PropRangeTblRef,
+	T_PropPlanState,
+	T_AttrRefer,	
 
 	/*
 	 * TAGS FOR PLAN STATE NODES (execnodes.h)
@@ -135,6 +142,9 @@ typedef enum NodeTag
 	T_SetOpState,
 	T_LockRowsState,
 	T_LimitState,
+	/*lsc*/
+	T_DeputyAggState,
+	T_DeputyScanState,
 
 	/*
 	 * TAGS FOR PRIMITIVE NODES (primnodes.h)
@@ -267,6 +277,9 @@ typedef enum NodeTag
 	T_RollupData,
 	T_GroupingSetData,
 	T_StatisticExtInfo,
+	/*lsc*/
+	T_DeputyPath,
+	T_SourceTargetlist,
 
 	/*
 	 * TAGS FOR MEMORY NODES (memnodes.h)
@@ -413,6 +426,19 @@ typedef enum NodeTag
 	T_DropSubscriptionStmt,
 	T_CreateStatsStmt,
 	T_AlterCollationStmt,
+	
+	/*lsc*/
+	T_CreateClassStmt,
+	T_CreateDeputyClassStmt,
+	T_InsertImpreciseStmt,
+	T_RawPath,
+	T_SwitchExprEntry,
+	T_DeputyVar,
+	T_Attr,
+	T_Ident,
+	T_ClassAttr,
+	T_WriteExpr,
+	T_UserPathExpr,
 
 	/*
 	 * TAGS FOR PARSE TREE NODES (parsenodes.h)
@@ -655,6 +681,8 @@ typedef enum CmdType
 	CMD_DELETE,
 	CMD_UTILITY,				/* cmds like create, destroy, copy, vacuum,
 								 * etc. */
+	CMD_DEPUTY,					/*lsc*/
+	CMD_IMPRECISE,
 	CMD_NOTHING					/* dummy command for instead nothing rules
 								 * with qual */
 } CmdType;

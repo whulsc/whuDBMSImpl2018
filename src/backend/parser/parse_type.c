@@ -261,6 +261,10 @@ typenameType(ParseState *pstate, const TypeName *typeName, int32 *typmod_p)
 				 errmsg("type \"%s\" is only a shell",
 						TypeNameToString(typeName)),
 				 parser_errposition(pstate, typeName->location)));
+	//lsc
+	/*if( pstate->iscreateclass && ((Form_pg_type) GETSTRUCT(tup))->typtype=='c')
+		elog(ERROR, "create class: a Column's type can not be a complex type.");*/
+
 	return tup;
 }
 

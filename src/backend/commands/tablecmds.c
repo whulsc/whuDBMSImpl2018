@@ -222,6 +222,12 @@ static const struct dropmsgstrings dropmsgstringarray[] = {
 		gettext_noop("table \"%s\" does not exist, skipping"),
 		gettext_noop("\"%s\" is not a table"),
 	gettext_noop("Use DROP TABLE to remove a table.")},
+	{RELKIND_CLASS,
+		ERRCODE_UNDEFINED_TABLE,
+		gettext_noop("class \"%s\" does not exist"),
+		gettext_noop("class \"%s\" does not exist, skipping"),
+		gettext_noop("\"%s\" is not a class"),
+	gettext_noop("Use DROP CLASS to remove a class.")},/*lsc*/
 	{RELKIND_SEQUENCE,
 		ERRCODE_UNDEFINED_TABLE,
 		gettext_noop("sequence \"%s\" does not exist"),
@@ -987,6 +993,10 @@ RemoveRelations(DropStmt *drop)
 	{
 		case OBJECT_TABLE:
 			relkind = RELKIND_RELATION;
+			break;
+
+		case OBJECT_CLASS:
+			relkind = RELKIND_CLASS;
 			break;
 
 		case OBJECT_INDEX:

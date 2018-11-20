@@ -71,6 +71,8 @@ typedef struct RangeVar
 	char		relpersistence; /* see RELPERSISTENCE_* in pg_class.h */
 	Alias	   *alias;			/* table alias & optional column aliases */
 	int			location;		/* token location, or -1 if unknown */
+	bool isclass;/*lsc*/
+	bool istemp;/*lsc*/
 } RangeVar;
 
 /*
@@ -134,6 +136,24 @@ typedef struct Expr
 	NodeTag		type;
 } Expr;
 
+/******
+typedef enum OpType
+{
+	OP_EXPR, FUNC_EXPR, OR_EXPR1, AND_EXPR1, NOT_EXPR1, SUBPLAN_EXPR
+} OpType;
+
+#ifdef 0
+typedef struct Expr2
+{
+	NodeTag		type;
+	Oid		typeOid;		// oid of the type of this expression
+	OpType		opType;			// type of this expression
+	Node	   *oper;			// operator node if needed (Oper, Func, or SubPlan) 
+	List	   *args;			// arguments to this expression 
+} Expr2;
+#endif 
+*/
+
 /*
  * Var - expression node representing a variable (ie, a table column)
  *
@@ -176,7 +196,54 @@ typedef struct Var
 	Index		varnoold;		/* original value of varno, for debugging */
 	AttrNumber	varoattno;		/* original value of varattno */
 	int			location;		/* token location, or -1 if unknown */
+	/* lsc
+	//if the var refer to a virtual attribute, switchExprs will be its switching exprs; added by ylq
+	List             *switchExprs;
+	// this var refers to a user path expression,added by ylq
+	struct     UserPathExpr   *userpath;
+	*/
 } Var;
+
+typedef struct DeputyVar
+{
+	Expr		xpr;
+	Index		varno;			// index of this deputyvar's relation in the
+								 // range table (could also be INNER or  OUTER)
+	AttrNumber	varattno;		// attribute number of this deputyvar, or zero for all 
+	Oid			vartype;		// pg_type tuple OID for the type of this  var 
+	int32		vartypmod;		// pg_attribute typmod value 
+	Index		varlevelsup;
+	
+	List		*path;		//list of ClassAttr
+	
+	//added by fzf, if the deputyvar is calculated by others 
+	bool        isCalculated;  //Is the deputyvar calculated by others 
+	Datum 		data;
+	bool 		isNull;
+	List		*deputyVarList; //the list of deputyvar which cme from the same source
+}DeputyVar;
+
+
+typedef	struct ClassAttr
+{
+	NodeTag		type;	
+	Oid		classid;
+	int 		aggNum;
+	int16	attrnum;
+	List		*cachedOid;
+	struct ExprContext* econtext;
+	Node 	*qual;
+}ClassAttr;
+
+typedef struct Attr
+{
+	NodeTag		type;
+	char           *catalogname;
+	char           *schemaname;
+	char           *relname;
+	char           *colname;
+	Oid             typeoid;
+}Attr;
 
 /*
  * Const
@@ -1374,6 +1441,8 @@ typedef struct TargetEntry
 	AttrNumber	resorigcol;		/* column's number in source table */
 	bool		resjunk;		/* set to true to eliminate the attribute from
 								 * final target list */
+	List        *writeSwitch;   /*lsc, used in transform write swithing expr,add by ylq*/
+
 } TargetEntry;
 
 

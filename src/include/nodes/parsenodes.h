@@ -91,6 +91,20 @@ typedef uint32 AclMode;			/* a bitmask of privilege bits */
 /*****************************************************************************
  *	Query Tree
  *****************************************************************************/
+/*
+ * * targetlist of source classes
+ * */
+/* lsc
+typedef struct SourceTargetlist
+{	
+	NodeTag  type;
+	Oid 	classid;			//oid of the class relation
+	List	*targetlist;		//target list, each attr has one TE
+	DeputyVar  *deputyvar; 
+	Relation	relation;
+	bool	     mustPropagate;	
+}SourceTargetlist;
+*/
 
 /*
  * Query -
@@ -178,6 +192,10 @@ typedef struct Query
 	 */
 	int			stmt_location;	/* start location, or -1 if unknown */
 	int			stmt_len;		/* length in bytes; 0 means "rest of string" */
+	
+	/*lsc*/
+//	List         *source_targetlist;/* list of targetlist of source classes*/
+//	bool        deputy_update;/*is the deputy object need to be updated?*/
 } Query;
 
 
@@ -233,6 +251,7 @@ typedef struct ColumnRef
 	NodeTag		type;
 	List	   *fields;			/* field names (Value strings) or A_Star */
 	int			location;		/* token location, or -1 if unknown */
+//	Oid     typeoid;              /*added by ylq which used in transform write expr*/
 } ColumnRef;
 
 /*
@@ -1058,6 +1077,10 @@ typedef struct RangeTblEntry
 	Bitmapset  *insertedCols;	/* columns needing INSERT permission */
 	Bitmapset  *updatedCols;	/* columns needing UPDATE permission */
 	List	   *securityQuals;	/* security barrier quals to apply, if any */
+	
+	/*lsc*/
+	bool isContainRealAttr;
+	bool isDeputyClass;
 } RangeTblEntry;
 
 /*
@@ -1657,7 +1680,8 @@ typedef enum ObjectType
 	OBJECT_TSTEMPLATE,
 	OBJECT_TYPE,
 	OBJECT_USER_MAPPING,
-	OBJECT_VIEW
+	OBJECT_VIEW,
+	OBJECT_CLASS/*LSC*/
 } ObjectType;
 
 /* ----------------------
@@ -2744,6 +2768,7 @@ typedef struct CreateFunctionStmt
 	TypeName   *returnType;		/* the return type */
 	List	   *options;		/* a list of DefElem */
 	List	   *withClause;		/* a list of DefElem */
+	Oid      classoid;       /*which class includes this function,added by ylq */
 } CreateFunctionStmt;
 
 typedef enum FunctionParameterMode
@@ -3431,5 +3456,127 @@ typedef struct DropSubscriptionStmt
 	bool		missing_ok;		/* Skip error if missing? */
 	DropBehavior behavior;		/* RESTRICT or CASCADE behavior */
 } DropSubscriptionStmt;
+/*lsc*/
+typedef struct CreateClassStmt
+{
+	NodeTag     type;
+	RangeVar	*classname;/*name of the class*/
+    List        *classelem;/*the attributes in class*/
+    List        *methods;/*the main bodys of methords */
+	Node		*createstmt;/*this will be the table of class's attrs*/
+	char        *tablespacename;
+}CreateClassStmt;
+
+/* ----------------------
+ *  *		Create Deputy Class  Statement
+ *   * ----------------------
+ *    */
+ 
+typedef struct CreateDeputyClassStmt
+{
+	NodeTag     	type;
+	RangeVar   	*classname;/*name of the class*/
+	bool		isPrecise; /*precise deputy rule must have "WHERE" clause*/
+    	List        	*realattrs;/*the attributes in class*/
+    	List        	*methods;/*the main bodys of methords */
+    	Node        	*deputyRule;/*ithis will be the deputy rule*/
+    	Node        	*createstmt;/*this will be the table of class's attrs*/
+    	char       	 dkind;/*the kind of deputy class, 's' select,'j' join,'u' union,'g' group*/
+	List	 	*writeExprs;/*write switching expressions*/	
+	char        	*tablespacename;
+	char 	    	*deputy_desc; 
+}CreateDeputyClassStmt;
+
+/* ----------------------
+ *  *		InsertImprecise  Statement
+ *   * ----------------------
+ *    */
+ 
+typedef struct InsertImpreciseStmt
+{
+	NodeTag 		type;
+
+	bool			addany;/*if true means do check ,just add any obj selected*/
+	RangeVar      *classname;
+	char			dkind;
+	Node		*selectstmt;
+	struct InsertStmt		*insertstmt;
+	struct HeapTupleData *realpart;
+	
+}InsertImpreciseStmt;
+
+/*-------------------------------------------------
+ * *	WriteExpr:
+ * *		the user-defined write switching expressions
+ * * modified by xp at 2006.5.17
+ * *--------------------------------------------------
+ * */
+
+typedef struct WriteExpr
+{
+	NodeTag 	type;
+	Oid 	classoid;
+	AttrNumber	attnum;
+	Node   *sourceAttr; /*an columnref  node, which is the target source attribute*/
+	Node    *expr;  /*the expression of write switching*/
+}WriteExpr;
+
+/*
+ * *	SwitchExprEntry:
+ * *		SwitchExprEntry is a single expr		
+ * */
+
+typedef struct SwitchExprEntry
+{
+	NodeTag		type;
+
+	bool 		isRead; /*is this a read-switching or a write-switching*/
+	int16		exprnum; /*expr number in pg_switching*/
+	AttrNumber	attrnum;	/*attribute num of this expr*/
+	List			*paths;	/*all DeputyVar nodes in this expr*/
+	Node		*SwitchExpr;/*the expr tree*/
+	struct     DeputyAggState       *deputyaggstate;	
+}SwitchExprEntry;
+
+/* path expr */
+typedef struct UserPathExpr
+{
+	Expr  expr;;
+	
+	Oid		userpathtype; /*data type of the final result of user path expression*/
+	Node 	*AggPath;  /*the aggregation func on target attribute(NULL if no aggregation), 
+						if no aggregation the this will be a plaint DeputyVar node*/								
+	Node 	*targetExpr; /*the target attribute of path*/
+	/*the exec context for aggregation*/
+	struct     DeputyAggState      *aggstate;
+	int   upecond;
+}UserPathExpr;
+
+/*-------------------------------------------------
+ * *     RawPath:
+ * *           to store the user-writed deputy path (like A->B->C.c)
+ * * modified by xp at 2006.5.17
+ * *--------------------------------------------------
+ * */
+
+/*
+ *  * Ident -
+ *   *	  an identifier (could be an attribute or a class name). Depending
+ *    *	  on the context at transformStmt time, the identifier is treated as
+ *     *	  either a class name  or an attribute 
+ *      */
+typedef struct Ident
+{
+	NodeTag		type;
+       Node  *item;  /*class name or attribute name */
+	Node  *pathqual;	/*in user-writing path expr, this is the bool expr of condition*/
+} Ident;
+
+typedef struct RawPath
+{	
+	NodeTag type	;	
+	List  *path;      /*the list of Ident */ 
+	Node *target;   /*target expression */	
+}RawPath;
 
 #endif							/* PARSENODES_H */

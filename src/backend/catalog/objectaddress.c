@@ -818,6 +818,7 @@ get_object_address(ObjectType objtype, Node *object,
 			case OBJECT_INDEX:
 			case OBJECT_SEQUENCE:
 			case OBJECT_TABLE:
+			case OBJECT_CLASS:/*lsc*/
 			case OBJECT_VIEW:
 			case OBJECT_MATVIEW:
 			case OBJECT_FOREIGN_TABLE:
@@ -2104,6 +2105,7 @@ pg_get_object_address(PG_FUNCTION_ARGS)
 	switch (type)
 	{
 		case OBJECT_TABLE:
+		case OBJECT_CLASS:/*lsc*/
 		case OBJECT_SEQUENCE:
 		case OBJECT_VIEW:
 		case OBJECT_MATVIEW:

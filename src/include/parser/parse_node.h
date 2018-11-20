@@ -212,6 +212,12 @@ struct ParseState
 	ParseParamRefHook p_paramref_hook;
 	CoerceParamHook p_coerce_param_hook;
 	void	   *p_ref_hook_state;	/* common passthrough link for above */
+	/**mod here, lsc, for create class stmt*/
+	bool               iscreateclass; /*lsc*/
+	bool 		isPrecise;	/*if this is a "create precise deputy class" query */				
+	/*for transform user path expression. all user path expression Var node in this query*/
+	List			*userpathvars;
+
 };
 
 /*

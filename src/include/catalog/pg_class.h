@@ -166,6 +166,8 @@ DESCR("");
 #define		  RELKIND_COMPOSITE_TYPE  'c'	/* composite type */
 #define		  RELKIND_FOREIGN_TABLE   'f'	/* foreign table */
 #define		  RELKIND_PARTITIONED_TABLE 'p' /* partitioned table */
+#define		  RELKIND_CLASS				'C'/*lsc*/
+#define		  RELKIND_DEPUTYCLASS		'D'/*lsc*/
 
 #define		  RELPERSISTENCE_PERMANENT	'p' /* regular table */
 #define		  RELPERSISTENCE_UNLOGGED	'u' /* unlogged permanent table */

@@ -18,6 +18,7 @@
 
 
 extern List *transformCreateStmt(CreateStmt *stmt, const char *queryString);
+extern List *transformCreateClassStmt(CreateClassStmt *stmt, const char *queryString);
 extern List *transformAlterTableStmt(Oid relid, AlterTableStmt *stmt,
 						const char *queryString);
 extern IndexStmt *transformIndexStmt(Oid relid, IndexStmt *stmt,

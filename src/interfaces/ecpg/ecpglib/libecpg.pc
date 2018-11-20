@@ -1,0 +1,9 @@
+Name: libecpg
+Description: PostgreSQL libecpg library
+Url: http://www.postgresql.org/
+Version: 10.5
+Requires: 
+Requires.private: libpq libpgtypes
+Cflags: -I/usr/local/whudb2018/include
+Libs: -L/usr/local/whudb2018/lib -lecpg
+Libs.private:  -lm

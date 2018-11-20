@@ -45,5 +45,25 @@ extern void applyLockingClause(Query *qry, Index rtindex,
 
 extern List *BuildOnConflictExcludedTargetlist(Relation targetrel,
 								  Index exclRelIndex);
+extern bool reloidIsClass(Oid reloid);
+extern bool  reloidIsDeputyClass(Oid reloid);
+extern bool  reloidIsBaseClass(Oid reloid);
+
+extern bool reloidIsClass(Oid reloid);
+extern void  walkSetOperations( Node *n, List **rtr_list );	
+extern List  *getReadSwitchexprs(Oid classoid, AttrNumber attrnum);
+extern bool  reloidIsDeputyClass(Oid reloid);
+extern bool  reloidIsBaseClass(Oid reloid);
+extern bool  reloidIsImprecise(Oid reloid);
+extern bool  relnameIsImprecise(RangeVar *relation);
+extern bool  isDirectRelatedClass(Oid left, Oid right);
+extern RangeVar  *reloidToRangeVar(Oid reloid);
+extern RangeVar *columnRefToRangevar(ColumnRef  *columnVar);
+extern bool relnameIsBasicClass(RangeVar * rel);
+extern bool relnameIsClass(RangeVar * rel);
+extern bool relnameIsDeputyClass(RangeVar * rel);
+extern void ReplaceDeputyTargetList(Query *qry);
+extern List *getDeputyClasses(Relation  deputyRelation, Oid ClassOid);
+extern int ReplaceTargetList(Query *sqry);
 
 #endif							/* ANALYZE_H */
