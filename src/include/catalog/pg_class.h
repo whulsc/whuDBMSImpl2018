@@ -158,6 +158,8 @@ DESCR("");
 
 
 #define		  RELKIND_RELATION		  'r'	/* ordinary table */
+#define		  RELKIND_CLASS			  'X'	/* base class */
+#define		  RELKIND_DEPUTYCLASS 	  'D'	/* deputy class */
 #define		  RELKIND_INDEX			  'i'	/* secondary index */
 #define		  RELKIND_SEQUENCE		  'S'	/* sequence object */
 #define		  RELKIND_TOASTVALUE	  't'	/* for out-of-line values */

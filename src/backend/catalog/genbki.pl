@@ -446,6 +446,7 @@ sub emit_pgattr_row
 		atttypmod     => '-1',
 		atthasdef     => 'f',
 		attidentity   => '',
+		attisdeputy   => 'f',
 		attisdropped  => 'f',
 		attislocal    => 't',
 		attinhcount   => '0',
