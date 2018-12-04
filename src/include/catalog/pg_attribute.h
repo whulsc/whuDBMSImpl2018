@@ -193,7 +193,7 @@ typedef FormData_pg_attribute *Form_pg_attribute;
  * ----------------
  */
 
-#define Natts_pg_attribute				22
+#define Natts_pg_attribute				23
 #define Anum_pg_attribute_attrelid		1
 #define Anum_pg_attribute_attname		2
 #define Anum_pg_attribute_atttypid		3
@@ -216,7 +216,7 @@ typedef FormData_pg_attribute *Form_pg_attribute;
 #define Anum_pg_attribute_attacl		20
 #define Anum_pg_attribute_attoptions	21
 #define Anum_pg_attribute_attfdwoptions 22
-
+#define Anum_pg_attribute_attisdeputy   23
 
 /* ----------------
  *		initial contents of pg_attribute
