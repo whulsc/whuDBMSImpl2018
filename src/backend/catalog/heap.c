@@ -341,7 +341,7 @@ heap_create(const char *relname,
 	/*
 	 * build the relcache entry.
 	 */
-	rel = RelationBuildLocalRelation(relname,
+	rel = RelationBuildLoealRelation(relname,
 									 relnamespace,
 									 tupDesc,
 									 relid,
@@ -861,6 +861,8 @@ AddNewRelationTuple(Relation pg_class_desc,
 	switch (relkind)
 	{
 		case RELKIND_RELATION:
+		case RELKIND_CLASS:
+			/*lsc*/
 		case RELKIND_MATVIEW:
 		case RELKIND_INDEX:
 		case RELKIND_TOASTVALUE:
@@ -886,7 +888,8 @@ AddNewRelationTuple(Relation pg_class_desc,
 	/* Initialize relfrozenxid and relminmxid */
 	if (relkind == RELKIND_RELATION ||
 		relkind == RELKIND_MATVIEW ||
-		relkind == RELKIND_TOASTVALUE)
+		relkind == RELKIND_TOASTVALUE || 
+		relkind == RELKIND_CLASS)/*lsc*/
 	{
 		/*
 		 * Initialize to the minimum XID that could put tuples in the table.

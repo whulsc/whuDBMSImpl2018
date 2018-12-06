@@ -987,115 +987,115 @@ ProcessUtilitySlow(ParseState *pstate,
 
 			case T_CreateClassStmt:
 				{
-					//List	   *stmts;
-					//ListCell   *l;
+					List	   *stmts;
+					ListCell   *l;
 
-					//CreateClassStmt *tstmt = (CreateClassStmt*) parsetree;
-					//CreateStmt *cstmt = makeNode(CreateStmt);
-					//
-					//cstmt->relation=tstmt->classname;  
-					//cstmt->tableElts=tstmt->classelem;
-					//cstmt->inhRelations=NIL;
-					//cstmt->constraints=NIL; 
-					////cstmt->hasoids=MUST_HAVE_OIDS;  
-					//cstmt->oncommit=ONCOMMIT_NOOP; 
-					//cstmt->tablespacename= tstmt->tablespacename;
+					CreateClassStmt *tstmt = (CreateClassStmt*) parsetree;
+					CreateStmt *cstmt = makeNode(CreateStmt);
+					
+					cstmt->relation=tstmt->classname;  
+					cstmt->tableElts=tstmt->classelem;
+					cstmt->inhRelations=NIL;
+					cstmt->constraints=NIL; 
+					//cstmt->hasoids=MUST_HAVE_OIDS;  
+					cstmt->oncommit=ONCOMMIT_NOOP; 
+					cstmt->tablespacename= tstmt->tablespacename;
 
 
-					///* Run parse analysis ... */
-					//stmts = transformCreateStmt(cstmt,
-					//							queryString);
+					/* Run parse analysis ... */
+					stmts = transformCreateStmt(cstmt,
+												queryString);
 
-					///* ... and do it */
-					//foreach(l, stmts)
-					//{
-					//	Node	   *stmt = (Node *) lfirst(l);
+					/* ... and do it */
+					foreach(l, stmts)
+					{
+						Node	   *stmt = (Node *) lfirst(l);
 
-					//	if (IsA(stmt, CreateStmt))
-					//	{
-					//		Datum		toast_options;
-					//		static char *validnsps[] = HEAP_RELOPT_NAMESPACES;
+						if (IsA(stmt, CreateStmt))
+						{
+							Datum		toast_options;
+							static char *validnsps[] = HEAP_RELOPT_NAMESPACES;
 
-					//		/* Create the table itself */
-					//		address = DefineRelation((CreateStmt *) stmt,
-					//								 RELKIND_CLASS,
-					//								 InvalidOid, NULL,
-					//								 queryString);
-					//		EventTriggerCollectSimpleCommand(address,
-					//										 secondaryObject,
-					//										 stmt);
+							/* Create the table itself */
+							address = DefineRelation((CreateStmt *) stmt,
+													 RELKIND_CLASS,
+													 InvalidOid, NULL,
+													 queryString);
+							EventTriggerCollectSimpleCommand(address,
+															 secondaryObject,
+															 stmt);
 
-					//		/*
-					//		 * Let NewRelationCreateToastTable decide if this
-					//		 * one needs a secondary relation too.
-					//		 */
-					//		CommandCounterIncrement();
+							/*
+							 * Let NewRelationCreateToastTable decide if this
+							 * one needs a secondary relation too.
+							 */
+							CommandCounterIncrement();
 
-					//		/*
-					//		 * parse and validate reloptions for the toast
-					//		 * table
-					//		 */
-					//		toast_options = transformRelOptions((Datum) 0,
-					//											((CreateStmt *) stmt)->options,
-					//											"toast",
-					//											validnsps,
-					//											true,
-					//											false);
-					//		(void) heap_reloptions(RELKIND_TOASTVALUE,
-					//							   toast_options,
-					//							   true);
+							/*
+							 * parse and validate reloptions for the toast
+							 * table
+							 */
+							toast_options = transformRelOptions((Datum) 0,
+																((CreateStmt *) stmt)->options,
+																"toast",
+																validnsps,
+																true,
+																false);
+							(void) heap_reloptions(RELKIND_TOASTVALUE,
+												   toast_options,
+												   true);
 
-					//		NewRelationCreateToastTable(address.objectId,
-					//									toast_options);
-					//	}
-					//	else if (IsA(stmt, CreateForeignTableStmt))
-					//	{
-					//		/* Create the table itself */
-					//		address = DefineRelation((CreateStmt *) stmt,
-					//								 RELKIND_FOREIGN_TABLE,
-					//								 InvalidOid, NULL,
-					//								 queryString);
-					//		CreateForeignTable((CreateForeignTableStmt *) stmt,
-					//						   address.objectId);
-					//		EventTriggerCollectSimpleCommand(address,
-					//										 secondaryObject,
-					//										 stmt);
-					//	}
-					//	else
-					//	{
-					//		/*
-					//		 * Recurse for anything else.  Note the recursive
-					//		 * call will stash the objects so created into our
-					//		 * event trigger context.
-					//		 */
-					//		PlannedStmt *wrapper;
+							NewRelationCreateToastTable(address.objectId,
+														toast_options);
+						}
+						else if (IsA(stmt, CreateForeignTableStmt))
+						{
+							/* Create the table itself */
+							address = DefineRelation((CreateStmt *) stmt,
+													 RELKIND_FOREIGN_TABLE,
+													 InvalidOid, NULL,
+													 queryString);
+							CreateForeignTable((CreateForeignTableStmt *) stmt,
+											   address.objectId);
+							EventTriggerCollectSimpleCommand(address,
+															 secondaryObject,
+															 stmt);
+						}
+						else
+						{
+							/*
+							 * Recurse for anything else.  Note the recursive
+							 * call will stash the objects so created into our
+							 * event trigger context.
+							 */
+							PlannedStmt *wrapper;
 
-					//		wrapper = makeNode(PlannedStmt);
-					//		wrapper->commandType = CMD_UTILITY;
-					//		wrapper->canSetTag = false;
-					//		wrapper->utilityStmt = stmt;
-					//		wrapper->stmt_location = pstmt->stmt_location;
-					//		wrapper->stmt_len = pstmt->stmt_len;
+							wrapper = makeNode(PlannedStmt);
+							wrapper->commandType = CMD_UTILITY;
+							wrapper->canSetTag = false;
+							wrapper->utilityStmt = stmt;
+							wrapper->stmt_location = pstmt->stmt_location;
+							wrapper->stmt_len = pstmt->stmt_len;
 
-					//		ProcessUtility(wrapper,
-					//					   queryString,
-					//					   PROCESS_UTILITY_SUBCOMMAND,
-					//					   params,
-					//					   NULL,
-					//					   None_Receiver,
-					//					   NULL);
-					//	}
+							ProcessUtility(wrapper,
+										   queryString,
+										   PROCESS_UTILITY_SUBCOMMAND,
+										   params,
+										   NULL,
+										   None_Receiver,
+										   NULL);
+						}
 
-					//	/* Need CCI between commands */
-					//	if (lnext(l) != NULL)
-					//		CommandCounterIncrement();
-					//}
+						/* Need CCI between commands */
+						if (lnext(l) != NULL)
+							CommandCounterIncrement();
+					}
 
-					///*
-					// * The multiple commands generated here are stashed
-					// * individually, so disable collection below.
-					// */
-					//commandCollected = true;
+					/*
+					 * The multiple commands generated here are stashed
+					 * individually, so disable collection below.
+					 */
+					commandCollected = true;
 					;
 				}
 				break;

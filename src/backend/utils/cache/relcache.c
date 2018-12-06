@@ -3353,10 +3353,11 @@ RelationBuildLocalRelation(const char *relname,
 	else
 		rel->rd_rel->relispopulated = true;
 
-	/* system relations and non-table objects don't have one */
+	/* system relations and non-table objects don't have one *//*lsc*/
 	if (!IsSystemNamespace(relnamespace) &&
 		(relkind == RELKIND_RELATION ||
 		 relkind == RELKIND_MATVIEW ||
+		 relkind == RELKIND_CLASS ||
 		 relkind == RELKIND_PARTITIONED_TABLE))
 		rel->rd_rel->relreplident = REPLICA_IDENTITY_DEFAULT;
 	else
