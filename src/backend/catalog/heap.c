@@ -1105,7 +1105,8 @@ heap_create_with_catalog(const char *relname,
 			(relkind == RELKIND_RELATION || relkind == RELKIND_SEQUENCE ||
 			 relkind == RELKIND_VIEW || relkind == RELKIND_MATVIEW ||
 			 relkind == RELKIND_COMPOSITE_TYPE || relkind == RELKIND_FOREIGN_TABLE ||
-			 relkind == RELKIND_PARTITIONED_TABLE))
+			 relkind == RELKIND_PARTITIONED_TABLE ||
+			 relkind == RELKIND_CLASS))
 		{
 			if (!OidIsValid(binary_upgrade_next_heap_pg_class_oid))
 				ereport(ERROR,
@@ -1136,6 +1137,7 @@ heap_create_with_catalog(const char *relname,
 		switch (relkind)
 		{
 			case RELKIND_RELATION:
+			case RELKIND_CLASS:
 			case RELKIND_VIEW:
 			case RELKIND_MATVIEW:
 			case RELKIND_FOREIGN_TABLE:
@@ -1181,6 +1183,7 @@ heap_create_with_catalog(const char *relname,
 	 * such is an implementation detail: toast tables, sequences and indexes.
 	 */
 	if (IsUnderPostmaster && (relkind == RELKIND_RELATION ||
+							  relkind == RELKIND_CLASS ||
 							  relkind == RELKIND_VIEW ||
 							  relkind == RELKIND_MATVIEW ||
 							  relkind == RELKIND_FOREIGN_TABLE ||

@@ -160,6 +160,30 @@ static Const *transformPartitionBoundValue(ParseState *pstate, A_Const *con,
  * then expand those into multiple IndexStmt blocks.
  *	  - thomas 1997-12-02
  */
+
+/*
+transformCreateClassStmt(CreateClassStmt *stmt, const char *queryString)
+{
+	//create class wrapper, lsc
+	List *result;
+
+	CreateStmt *cstmt = makeNode(CreateStmt);
+	
+	cstmt->relation=stmt->classname;  
+	cstmt->tableElts=stmt->classelem;
+	cstmt->inhRelations=NIL;
+	cstmt->constraints=NIL; 
+	//cstmt->hasoids=MUST_HAVE_OIDS;  
+	cstmt->oncommit=ONCOMMIT_NOOP; 
+	cstmt->tablespacename= stmt->tablespacename;
+
+	result = transformCreateStmt(cstmt, queryString);
+
+	return result;
+}
+*/
+
+
 List *
 transformCreateStmt(CreateStmt *stmt, const char *queryString)
 {

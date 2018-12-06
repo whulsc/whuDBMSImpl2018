@@ -649,7 +649,8 @@ DefineRelation(CreateStmt *stmt, char relkind, Oid ownerId,
 	 */
 	localHasOids = interpretOidsOption(stmt->options,
 									   (relkind == RELKIND_RELATION ||
-										relkind == RELKIND_PARTITIONED_TABLE));
+										relkind == RELKIND_PARTITIONED_TABLE ||
+										relkind == RELKIND_CLASS));
 	descriptor->tdhasoid = (localHasOids || parentOidCount > 0);
 
 	/*

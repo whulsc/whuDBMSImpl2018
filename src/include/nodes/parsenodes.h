@@ -2017,10 +2017,9 @@ typedef struct CreateStmt
 typedef struct CreateClassStmt
 {
 	NodeTag type;
+	Node *createstmt;
 	RangeVar *classname;
 	List *classelem;
-	List *methods;
-	Node *createstmt;
 	char *tablespacename;
 }CreateClassStmt;
 

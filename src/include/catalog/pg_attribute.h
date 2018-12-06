@@ -168,8 +168,8 @@ CATALOG(pg_attribute,1249) BKI_BOOTSTRAP BKI_WITHOUT_OIDS BKI_ROWTYPE_OID(75) BK
 	/* Column-level FDW options */
 	text		attfdwoptions[1];
 
-	bool attisdeputy;
 #endif
+	bool attisdeputy;
 } FormData_pg_attribute;
 
 /*
