@@ -71,6 +71,8 @@ typedef struct RangeVar
 	char		relpersistence; /* see RELPERSISTENCE_* in pg_class.h */
 	Alias	   *alias;			/* table alias & optional column aliases */
 	int			location;		/* token location, or -1 if unknown */
+	bool  istemp;
+	bool isclass;
 } RangeVar;
 
 /*

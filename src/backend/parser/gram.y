@@ -258,6 +258,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 		CreateDomainStmt CreateExtensionStmt CreateGroupStmt CreateOpClassStmt
 		CreateOpFamilyStmt AlterOpFamilyStmt CreatePLangStmt
 		CreateSchemaStmt CreateSeqStmt CreateStmt CreateStatsStmt CreateTableSpaceStmt
+		CreateClassStmt /*lsc*/
 		CreateFdwStmt CreateForeignServerStmt CreateForeignTableStmt
 		CreateAssertStmt CreateTransformStmt CreateTrigStmt CreateEventTrigStmt
 		CreateUserStmt CreateUserMappingStmt CreateRoleStmt CreatePolicyStmt
@@ -870,6 +871,7 @@ stmt :
 			| CreateSchemaStmt
 			| CreateSeqStmt
 			| CreateStmt
+			| CreateClassStmt /*lsc*/
 			| CreateSubscriptionStmt
 			| CreateStatsStmt
 			| CreateTableSpaceStmt
@@ -1354,6 +1356,7 @@ OptSchemaEltList:
  */
 schema_stmt:
 			CreateStmt
+			| CreateClassStmt
 			| IndexStmt
 			| CreateSeqStmt
 			| CreateTrigStmt
@@ -3033,7 +3036,21 @@ copy_generic_opt_arg_list:
 copy_generic_opt_arg_list_item:
 			opt_boolean_or_string	{ $$ = (Node *) makeString($1); }
 		;
-
+/*
+* Query: CREATE CLASS classname
+* lsc
+*/
+CreateClassStmt:  CREATE CLASS qualified_name '(' OptTableElementList ')' 
+		{												
+		 CreateClassStmt *n=makeNode(CreateClassStmt);												
+		 $3->istemp=false;												
+		 $3->isclass=true;					
+		 n->classname=$3;					
+		 n->classelem=$5;					
+		 n->createstmt=NULL;					
+		 $$=(Node *)n;					
+		}					
+		;
 
 /*****************************************************************************
  *

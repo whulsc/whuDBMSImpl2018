@@ -2014,6 +2014,16 @@ typedef struct CreateStmt
 	bool		if_not_exists;	/* just do nothing if it already exists? */
 } CreateStmt;
 
+typedef struct CreateClassStmt
+{
+	NodeTag type;
+	RangeVar *classname;
+	List *classelem;
+	List *methods;
+	Node *createstmt;
+	char *tablespacename;
+}CreateClassStmt;
+
 /* ----------
  * Definitions for constraints in CreateStmt
  *
