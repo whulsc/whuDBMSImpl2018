@@ -1107,6 +1107,7 @@ CheckValidResultRel(ResultRelInfo *resultRelInfo, CmdType operation)
 	{
 		case RELKIND_RELATION:
 		case RELKIND_PARTITIONED_TABLE:
+		case RELKIND_CLASS:/*lsc*/
 			CheckCmdReplicaIdentity(resultRel, operation);
 			break;
 		case RELKIND_SEQUENCE:

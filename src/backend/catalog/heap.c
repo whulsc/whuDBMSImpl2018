@@ -341,7 +341,7 @@ heap_create(const char *relname,
 	/*
 	 * build the relcache entry.
 	 */
-	rel = RelationBuildLoealRelation(relname,
+	rel = RelationBuildLocalRelation(relname,
 									 relnamespace,
 									 tupDesc,
 									 relid,
