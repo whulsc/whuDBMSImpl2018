@@ -359,6 +359,9 @@ DECLARE_UNIQUE_INDEX(pg_subscription_subname_index, 6115, on pg_subscription usi
 DECLARE_UNIQUE_INDEX(pg_subscription_rel_srrelid_srsubid_index, 6117, on pg_subscription_rel using btree(srrelid oid_ops, srsubid oid_ops));
 #define SubscriptionRelSrrelidSrsubidIndexId 6117
 
+DECLARE_UNIQUE_INDEX(pg_deputy_deputyclassid_index, 9101, on pg_deputy using btree(deputyclassid));
+#define DeputyClassIdIndexId 9101
+
 /* last step of initialization script: build the indexes declared above */
 BUILD_INDICES
 

@@ -37,6 +37,7 @@
 #include "catalog/pg_db_role_setting.h"
 #include "catalog/pg_default_acl.h"
 #include "catalog/pg_depend.h"
+#include "catalog/pg_deputy.h"
 #include "catalog/pg_description.h"
 #include "catalog/pg_enum.h"
 #include "catalog/pg_event_trigger.h"
@@ -371,6 +372,17 @@ static const struct cachedesc cacheinfo[] = {
 			Anum_pg_default_acl_defaclrole,
 			Anum_pg_default_acl_defaclnamespace,
 			Anum_pg_default_acl_defaclobjtype,
+			0
+		},
+		8
+	},
+	{DeputyClassId,
+		DeputyClassIdIndexId,
+		1,
+		{
+			Anum_pg_deputy_deputyclassid,
+			0,
+			0,
 			0
 		},
 		8

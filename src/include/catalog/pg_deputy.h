@@ -9,7 +9,7 @@ CATALOG(pg_deputy,9001)
 {
 	Oid sourceclassid;
 	Oid deputyclassid;
-	int4 deputyseqno;
+	int32 deputyseqno;
 } FormData_pg_deputy;
 
 typedef FormData_pg_deputy  *Form_pg_deputy;
