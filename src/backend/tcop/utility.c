@@ -176,7 +176,8 @@ check_xact_readonly(Node *parsetree)
 		case T_CreateSchemaStmt:
 		case T_CreateSeqStmt:
 		case T_CreateStmt:
-		case T_CreateClassStmt:
+		case T_CreateClassStmt: /*lsc*/
+		case T_CreateDeputyClassStmt: /*lsc*/
 		case T_CreateTableAsStmt:
 		case T_RefreshMatViewStmt:
 		case T_CreateTableSpaceStmt:
@@ -1099,7 +1100,9 @@ ProcessUtilitySlow(ParseState *pstate,
 					;
 				}
 				break;
-
+			case T_CreateDeputyClassStmt:
+				{;}
+				break;
 			case T_CreateStmt:
 			case T_CreateForeignTableStmt:
 				{
@@ -2266,6 +2269,10 @@ CreateCommandTag(Node *parsetree)
 			
 		case T_CreateClassStmt:
 			tag = "CREATE CLASS";
+			break;
+
+		case T_CreateDeputyClassStmt:
+			tag = "CREATE DEPUTY CLASS";
 			break;
 
 		case T_CreateTableSpaceStmt:

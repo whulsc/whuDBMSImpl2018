@@ -2023,6 +2023,17 @@ typedef struct CreateClassStmt
 	char *tablespacename;
 }CreateClassStmt;
 
+typedef struct CreateDeputyClassStmt
+{
+	NodeTag type;
+	RangeVar *classname;
+	List *relattrs;
+	Node *deputyRule;
+	Node *createstmt;
+	char dkind;/*s for "select"*/
+	char *deputy_desc;
+}CreateDeputyClassStmt;
+
 /* ----------
  * Definitions for constraints in CreateStmt
  *

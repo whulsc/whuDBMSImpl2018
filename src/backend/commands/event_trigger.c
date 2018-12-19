@@ -111,6 +111,7 @@ static event_trigger_support_data event_trigger_support[] = {
 	{"ROLE", false},
 	{"RULE", true},
 	{"SCHEMA", true},
+	{"SELECTDEPUTYCLASS", true},
 	{"SEQUENCE", true},
 	{"SERVER", true},
 	{"STATISTICS", true},

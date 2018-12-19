@@ -258,7 +258,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 		CreateDomainStmt CreateExtensionStmt CreateGroupStmt CreateOpClassStmt
 		CreateOpFamilyStmt AlterOpFamilyStmt CreatePLangStmt
 		CreateSchemaStmt CreateSeqStmt CreateStmt CreateStatsStmt CreateTableSpaceStmt
-		CreateClassStmt /*lsc*/
+		CreateClassStmt CreateDeputyClassStmt /*lsc*/
 		CreateFdwStmt CreateForeignServerStmt CreateForeignTableStmt
 		CreateAssertStmt CreateTransformStmt CreateTrigStmt CreateEventTrigStmt
 		CreateUserStmt CreateUserMappingStmt CreateRoleStmt CreatePolicyStmt
@@ -580,6 +580,8 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 %type <node>		partbound_datum PartitionRangeDatum
 %type <list>		partbound_datum_list range_datum_list
 
+%type <list> opt_attr_list /*lsc*/
+%type <chr> deputy_class /*lsc*/
 /*
  * Non-keyword token types.  These are hard-wired into the "flex" lexer.
  * They must be listed first so that their numeric codes do not depend on
@@ -667,7 +669,7 @@ static Node *makeRecursiveViewSelect(char *relname, List *aliases, Node *query);
 	RESET RESTART RESTRICT RETURNING RETURNS REVOKE RIGHT ROLE ROLLBACK ROLLUP
 	ROW ROWS RULE
 
-	SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SEQUENCE SEQUENCES
+	SAVEPOINT SCHEMA SCHEMAS SCROLL SEARCH SECOND_P SECURITY SELECT SELECTDEPUTYCLASS SEQUENCE SEQUENCES
 	SERIALIZABLE SERVER SESSION SESSION_USER SET SETS SETOF SHARE SHOW
 	SIMILAR SIMPLE SKIP SMALLINT SNAPSHOT SOME SQL_P STABLE STANDALONE_P
 	START STATEMENT STATISTICS STDIN STDOUT STORAGE STRICT_P STRIP_P
@@ -872,6 +874,7 @@ stmt :
 			| CreateSeqStmt
 			| CreateStmt
 			| CreateClassStmt /*lsc*/
+			| CreateDeputyClassStmt /*lsc*/
 			| CreateSubscriptionStmt
 			| CreateStatsStmt
 			| CreateTableSpaceStmt
@@ -1356,7 +1359,6 @@ OptSchemaEltList:
  */
 schema_stmt:
 			CreateStmt
-			| CreateClassStmt
 			| IndexStmt
 			| CreateSeqStmt
 			| CreateTrigStmt
@@ -3051,7 +3053,31 @@ CreateClassStmt:  CREATE CLASS qualified_name '(' OptTableElementList ')'
 		 $$=(Node *)n;					
 		}					
 		;
+/*
+* Query: CREATE SELECTDEPUTYCLASS
+* lsc
+*/
 
+CreateDeputyClassStmt: CREATE deputy_class qualified_name opt_attr_list
+					 AS select_with_parens
+					 {
+						CreateDeputyClassStmt *n=makeNode(CreateDeputyClassStmt);
+						$3->istemp=false;
+						$3->isclass=true;
+						n->dkind=$2;
+						n->classname=$3;
+						n->relattrs=$4;
+						n->deputyRule=$6;
+						n->createstmt=NULL;
+						n->deputy_desc=NULL;
+						$$=(Node *)n;
+					 }
+
+opt_attr_list: '(' OptTableElementList ')' {$$=$2;}
+			 |  /*empty*/  {$$=NIL;}
+			 ;
+deputy_class: SELECTDEPUTYCLASS {$$='s';}
+			;
 /*****************************************************************************
  *
  *		QUERY :
@@ -15071,6 +15097,7 @@ reserved_keyword:
 			| REFERENCES
 			| RETURNING
 			| SELECT
+			| SELECTDEPUTYCLASS
 			| SESSION_USER
 			| SOME
 			| SYMMETRIC

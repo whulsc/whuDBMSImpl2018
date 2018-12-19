@@ -319,6 +319,7 @@ typedef enum NodeTag
 	T_CopyStmt,
 	T_CreateStmt,
 	T_CreateClassStmt,
+	T_CreateDeputyClassStmt,
 	T_DefineStmt,
 	T_DropStmt,
 	T_TruncateStmt,
